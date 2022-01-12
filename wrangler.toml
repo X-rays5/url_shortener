@@ -1,0 +1,26 @@
+name = "url_shortener"
+type = "javascript"
+workers_dev = true
+compatibility_date = "2022-01-12"
+[[kv_namespaces]]
+binding = "db"
+id = "4ba229ba18a946f292a9536671b747ca"
+preview_id = "e4d17a42f6ff4770b9bfc8f59c977932"
+
+[vars]
+WORKERS_RS_VERSION = "0.0.7"
+
+[build]
+command = "cargo install -q worker-build && worker-build --release" # required
+
+[build.upload]
+dir    = "build/worker"
+format = "modules"
+main   = "./shim.mjs"
+
+[[build.upload.rules]]
+globs = ["**/*.wasm"]
+type  = "CompiledWasm"
+
+# read more about configuring your Worker via wrangler.toml at:
+# https://developers.cloudflare.com/workers/cli-wrangler/configuration
