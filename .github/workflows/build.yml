@@ -1,0 +1,14 @@
+name: Build
+
+on: [pull_request]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+      - uses: actions/checkout@master
+      - name: Build
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: npm i @cloudflare/wrangler && npx wrangler build
