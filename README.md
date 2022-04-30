@@ -7,7 +7,7 @@ Generate a new one with
 ```cmd
 wrangler kv:namespace create "db" --preview
 ```
-Then change the id abd preview_id in wrangler.toml to your own
+Then change the id for preview_id in wrangler.toml to your own
 
 <h2>Usage</h2>
 <h4>ShareX Config</h4>
