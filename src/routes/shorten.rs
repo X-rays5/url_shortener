@@ -14,7 +14,7 @@ async fn random_string(length: u64) -> String {
 }
 
 async fn verify_url(url: String) -> bool {
-    match worker::Fetch::Url(url.parse().unwrap()).send().await {
+    match worker::Fetch::Url(url.parse().unwrap_or("")).send().await {
         Ok(mut val) => {
             match val.bytes().await {
                 Ok(val) => val.len() > 0,
