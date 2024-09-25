@@ -24,6 +24,10 @@ pub async fn main(req: Request, env: Env) -> Result<Response> {
 
     router
         .get_async("/", routes::index::handle_request)
+        .on("/health", |_, _| async {
+            let response = Response::ok("Health check OK");
+            response
+        })
         .post_async("/shorten", routes::shorten::handle_request)
         .get_async("/r/:id", routes::redirect::handle_request)
         .run(req, env)
