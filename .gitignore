@@ -1,5 +1,5 @@
+**/build
 **/target
-**/*.rs.bk
-**?wasm-pack.log
-**/build/
-Cargo.lock
+**/dist
+**/.wrangler
+**/.idea

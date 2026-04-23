@@ -18,11 +18,11 @@ pub async fn handle_request(_req: Request, ctx: RouteContext<()>) -> Result<Resp
         Err(err) => return Response::error(err.to_string(), 500)
     };
 
-    match db.get(id.as_str()).await {
+    match db.get(id.as_str()).text().await {
         Ok(val) => {
             match val {
                 Some(val) => {
-                    Response::redirect(Url::from_str(&val.as_string()).unwrap())
+                    Response::redirect(Url::from_str(&val)?)
                 },
                 None => Response::error("url not found".to_string(), 404)
             }

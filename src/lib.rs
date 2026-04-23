@@ -1,6 +1,5 @@
 use worker::*;
 
-mod utils;
 mod routes;
 
 fn log_request(req: &Request) {
@@ -8,23 +7,20 @@ fn log_request(req: &Request) {
         "{} - [{}], located at: {:?}, within: {}",
         Date::now().to_string(),
         req.path(),
-        req.cf().coordinates().unwrap_or_default(),
-        req.cf().region().unwrap_or("unknown region".into())
+        req.cf().unwrap().coordinates().unwrap_or_default(),
+        req.cf().unwrap().region().unwrap_or("unknown region".into())
     );
 }
 
 #[event(fetch)]
-pub async fn main(req: Request, env: Env) -> Result<Response> {
+pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     log_request(&req);
-
-    // Optionally, get more helpful error messages written to the console in the case of a panic.
-    utils::set_panic_hook();
 
     let router = Router::new();
 
     router
         .get_async("/", routes::index::handle_request)
-        .on("/health", |_, _| async {
+        .on("/health", |_, _| {
             let response = Response::ok("Health check OK");
             response
         })

@@ -1,20 +1,35 @@
 use serde_json::json;
 use worker::*;
 
-async fn random_string(length: u64) -> String {
-    let mut req = match worker::Fetch::Url(format!("https://randomstring.bleep.workers.dev/?length={0}", length).parse().unwrap()).send().await {
-        Ok(val) => val,
-        Err(_) => Response::error("", 500).unwrap()
-    };
+fn normalize_url(url: &str) -> Option<Url> {
+    let trimmed = url.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
 
-    match req.text().await {
-        Ok(val) => val,
-        Err(_) => "err".to_string()
+    match Url::parse(trimmed) {
+        Ok(parsed) => Some(parsed),
+        Err(_) => Url::parse(format!("https://{trimmed}").as_str()).ok(),
     }
 }
 
+async fn random_string(length: u64) -> String {
+    let mut req = Fetch::Url(format!("https://randomstring.bleep.workers.dev/?length={0}", length).parse().unwrap()).send().await.unwrap_or_else(|_| Response::error("", 500).unwrap());
+
+    req.text().await.unwrap_or_else(|_| "err".to_string())
+}
+
 async fn verify_url(url: String) -> bool {
-    match worker::Fetch::Url(url.parse().unwrap_or("")).send().await {
+    console_log!("verifying url: {0}", url);
+    let parsed_url = match normalize_url(url.as_str()) {
+        Some(parsed) => parsed,
+        None => {
+            console_log!("invalid url");
+            return false;
+        }
+    };
+
+    match Fetch::Url(parsed_url).send().await {
         Ok(mut val) => {
             match val.bytes().await {
                 Ok(val) => val.len() > 0,
@@ -28,6 +43,17 @@ async fn verify_url(url: String) -> bool {
 pub async fn handle_request(mut req: Request, ctx: RouteContext<()>) -> Result<Response> {
     match req.text().await {
         Ok(url) => {
+            let normalized_url = match normalize_url(url.as_str()) {
+                Some(parsed) => parsed.to_string(),
+                None => {
+                    let res = json!({
+                        "error": "invalid url"
+                    })
+                    .to_string();
+                    return Response::error(res, 400);
+                }
+            };
+
             if verify_url(url.clone()).await {
                 let db = match ctx.kv("db") {
                   Ok(val) => val,
@@ -37,7 +63,7 @@ pub async fn handle_request(mut req: Request, ctx: RouteContext<()>) -> Result<R
                 // The chance of a collision is really low, but we'll check anyway
                 let mut key = random_string(10).await;
                 loop {
-                    match db.get(&key).await {
+                    match db.get(&key).text().await {
                         Ok(val) => {
                             match val {
                                 Some(_) => {
@@ -54,15 +80,15 @@ pub async fn handle_request(mut req: Request, ctx: RouteContext<()>) -> Result<R
                     }
                 };
 
-                match db.put(key.as_str(), url).unwrap().execute().await {
+                match db.put(key.as_str(), normalized_url)?.execute().await {
                     Ok(_) => {
                         let res = json!({
-                            "url": format!("{0}/r/{1}", req.headers().get("host").unwrap().unwrap(), key),
+                            "url": format!("{0}/r/{1}", req.headers().get("host")?.unwrap(), key),
                         }).to_string();
                         Response::ok(res)
                     },
                     Err(err) => {
-                        return Response::error(err.to_string(), 500)
+                        Response::error(err.to_string(), 500)
                     }
                 }
             } else {
