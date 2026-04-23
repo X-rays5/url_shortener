@@ -2,6 +2,9 @@ name = "url_shortener"
 main = "build/index.js"
 compatibility_date = "2026-04-23"
 
+[placement]
+mode = "smart"
+
 [[kv_namespaces]]
 binding = "db"
 id = "4ba229ba18a946f292a9536671b747ca"
@@ -9,3 +12,18 @@ preview_id = "e4d17a42f6ff4770b9bfc8f59c977932"
 
 [build]
 command = "cargo install -q \"worker-build@^0.8\" && worker-build --release"
+
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1
