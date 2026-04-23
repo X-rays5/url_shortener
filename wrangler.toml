@@ -2,6 +2,7 @@ name = "url_shortener"
 type = "javascript"
 workers_dev = true
 compatibility_date = "2022-01-12"
+
 [[kv_namespaces]]
 binding = "db"
 id = "4ba229ba18a946f292a9536671b747ca"
