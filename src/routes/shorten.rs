@@ -1,3 +1,5 @@
+use rand::distr::{Alphanumeric, SampleString};
+use rand::RngExt;
 use serde_json::json;
 use worker::*;
 
@@ -13,10 +15,12 @@ fn normalize_url(url: &str) -> Option<Url> {
     }
 }
 
-async fn random_string(length: u64) -> String {
-    let mut req = Fetch::Url(format!("https://randomstring.bleep.workers.dev/?length={0}", length).parse().unwrap()).send().await.unwrap_or_else(|_| Response::error("", 500).unwrap());
-
-    req.text().await.unwrap_or_else(|_| "err".to_string())
+fn random_string() -> String {
+    let mut rng = rand::rng();
+    let length = rng.random_range(6..=14);
+    let mut res = Alphanumeric.sample_string(&mut rng, length);
+    res.shrink_to_fit();
+    res
 }
 
 async fn verify_url(url: String) -> bool {
@@ -61,13 +65,13 @@ pub async fn handle_request(mut req: Request, ctx: RouteContext<()>) -> Result<R
                 };
 
                 // The chance of a collision is really low, but we'll check anyway
-                let mut key = random_string(10).await;
+                let mut key = random_string();
                 loop {
                     match db.get(&key).text().await {
                         Ok(val) => {
                             match val {
                                 Some(_) => {
-                                    key = random_string(10).await;
+                                    key = random_string();
                                 },
                                 None => {
                                     break;
